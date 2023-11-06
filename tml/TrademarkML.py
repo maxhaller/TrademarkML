@@ -1,4 +1,4 @@
-import sklearn.preprocessing
+    import sklearn.preprocessing
 
 from tml.similarity_module.phentic_encoding import PhoneticEncoding
 from tml.similarity_module.string_similarity import StringSimilarity
@@ -267,7 +267,7 @@ class TrademarkML:
                                     cols.append(v)
                                 if a != 'none':
                                     cols.append(a)
-                                if c != 'none:':
+                                if c != 'none':
                                     cols.append(c)
                                 if i != 'none':
                                     cols.append(i)
