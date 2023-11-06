@@ -1,4 +1,4 @@
-best iteration: 1
+best iteration: 2
 
 
 
@@ -12,7 +12,28 @@ f1: 0.7928307854507116
 
 best params: {'C': 0.01}
 best scoring: 0.5227377133492789
-cv-results: {'mean_fit_time': array([0.00656641, 0.00399536, 0.00413358, 0.0043804 , 0.00420386]), 'std_fit_time': array([0.00422719, 0.00058911, 0.00035281, 0.00052151, 0.00077756]), 'mean_score_time': array([0.00152105, 0.00153565, 0.001495  , 0.00119007, 0.00128728]), 'std_score_time': array([0.00050069, 0.00056975, 0.00050817, 0.00026892, 0.00046774]), 'param_C': masked_array(data=[0.01, 0.1, 1, 10, 100],
-             mask=[False, False, False, False, False],
-       fill_value='?',
-            dtype=object), 'params': [{'C': 0.01}, {'C': 0.1}, {'C': 1}, {'C': 10}, {'C': 100}], 'split0_test_score': array([0.61405197, 0.59961501, 0.59672762, 0.59672762, 0.59672762]), 'split1_test_score': array([0.66876122, 0.66157989, 0.65888689, 0.65888689, 0.65798923]), 'split2_test_score': array([0.37763833, 0.3930405 , 0.39874501, 0.40045636, 0.40045636]), 'split3_test_score': array([0.43049933, 0.43117409, 0.43319838, 0.43319838, 0.43319838]), 'mean_test_score': array([0.52273771, 0.52135237, 0.52188948, 0.52231731, 0.5220929 ]), 'std_test_score': array([0.12167879, 0.11223286, 0.10885737, 0.10837484, 0.10809236]), 'rank_test_score': array([1, 5, 4, 2, 3])}
+
+
+2: damerau, metaphone2_damerau, conc_lev_wordnet, spacy_item_similarity
+
+accuracy: 0.6765704584040747
+precision: 0.6765704584040747
+recall: 1.0
+roc: 0.5
+f1: 0.8070886075949367
+
+best params: {'C': 0.01}
+best scoring: 0.5800828360720692
+
+
+3: damerau, metaphone2_damerau, conc_lev_wordnet, spacy_item_similarity
+
+accuracy: 0.6570458404074703
+precision: 0.6841611996251171
+recall: 0.9159347553324969
+roc: 0.5157101598184795
+f1: 0.7832618025751072
+
+best params: {'C': 10}
+best scoring: 0.5220928979532364
+

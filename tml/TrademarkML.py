@@ -1,3 +1,5 @@
+import sklearn.preprocessing
+
 from tml.similarity_module.phentic_encoding import PhoneticEncoding
 from tml.similarity_module.string_similarity import StringSimilarity
 from tml.similarity_module.conceptual_similarity import ConceptualSimilarity
@@ -9,6 +11,7 @@ from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import GroupShuffleSplit
+from sklearn.preprocessing import Normalizer, StandardScaler
 
 import spacy_universal_sentence_encoder
 import pandas as pd
@@ -148,9 +151,13 @@ class TrademarkML:
                                         and 'Contested' not in c
                                         and 'Earlier' not in c
                         ]
+        vis_features.append('none')
         aur_features = [c for c in cols if c.startswith('metaphone')]
+        aur_features.append('none')
         con_features = [c for c in cols if c.startswith('conc_')]
+        con_features.append('none')
         it_features = [c for c in cols if c.startswith('spacy')]
+        it_features.append('none')
 
         print(vis_features)
         print(aur_features)
@@ -185,11 +192,18 @@ class TrademarkML:
                 'name': 'svm',
                 'clf': svm,
                 'grid': svm_grid
-            },             {
-                'name': 'mlp',
-                'clf': mlp,
-                'grid': mlp_grid
-            }]
+            }#,             {
+             #   'name': 'mlp',
+             #   'clf': mlp,
+             #   'grid': mlp_grid
+            #}
+        ]
+
+        scalers = [
+            'none',
+            'normalizer',
+            'standardscaler'
+        ]
 
         for model in models:
             m_name = model['name']
@@ -202,27 +216,82 @@ class TrademarkML:
                 for a in aur_features:
                     for c in con_features:
                         for i in it_features:
-                            print(f'{m_name} - {counter}: {v}, {a}, {c}, {i}')
-                            split = GroupShuffleSplit(n_splits=4, train_size=.8, random_state=42).split(X=x_train, y=y_train, groups=word_mark_df.loc[train_idx, 'Case ID'])
-                            gridsearch = GridSearchCV(model['clf'], cv=split, param_grid=model['grid'])
-                            gridsearch.fit(x_train[[v, a, c, i]], y_train)
-                            y_pred = gridsearch.predict(x_test[[v, a, c, i]])
-                            acc = accuracy_score(y_pred=y_pred, y_true=y_test)
-                            precision = precision_score(y_pred=y_pred, y_true=y_test)
-                            recall = recall_score(y_pred=y_pred, y_true=y_test)
-                            auc = roc_auc_score(y_score=y_pred, y_true=y_test)
-                            f1 = f1_score(y_pred=y_pred, y_true=y_test)
-                            result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n\nbest params: {gridsearch.best_params_}\nbest scoring: {gridsearch.best_score_}\ncv-results: {gridsearch.cv_results_}'
-                            if best_acc < acc:
-                                best_acc = acc
-                                best_iteration = counter
-                                best_gridsearch = gridsearch
-                            print(f'{counter}: {acc}')
-                            counter += 1
-                            break
-                        break
-                    break
-                break
+                            if m_name == 'svm':
+                                for scaler in scalers:
+                                    cols = []
+                                    if v != 'none':
+                                        cols.append(v)
+                                    if a != 'none':
+                                        cols.append(a)
+                                    if c != 'none:':
+                                        cols.append(c)
+                                    if i != 'none':
+                                        cols.append(i)
+
+                                    if len(cols) > 0:
+                                        print(f'{m_name} - {counter}: {scaler}, {cols}')
+                                        split = GroupShuffleSplit(n_splits=4, train_size=.8, random_state=42).split(X=x_train, y=y_train, groups=word_mark_df.loc[train_idx, 'Case ID'])
+                                        gridsearch = GridSearchCV(model['clf'], cv=split, param_grid=model['grid'])
+
+                                        sc = None
+                                        if scaler == 'normalizer':
+                                            sc = Normalizer()
+                                        if scaler == 'standardscaler':
+                                            sc = StandardScaler()
+
+                                        if scaler != 'none':
+                                            x_train_scaled = sc.fit_transform(x_train[cols])
+                                            x_test_scaled = sc.transform(x_test[cols])
+                                        else:
+                                            x_train_scaled = x_train[cols]
+                                            x_test_scaled = x_test[cols]
+
+
+                                        gridsearch.fit(x_train_scaled, y_train)
+                                        y_pred = gridsearch.predict(x_test_scaled)
+                                        acc = accuracy_score(y_pred=y_pred, y_true=y_test)
+                                        precision = precision_score(y_pred=y_pred, y_true=y_test)
+                                        recall = recall_score(y_pred=y_pred, y_true=y_test)
+                                        auc = roc_auc_score(y_score=y_pred, y_true=y_test)
+                                        f1 = f1_score(y_pred=y_pred, y_true=y_test)
+                                        result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n\nbest params: {gridsearch.best_params_}\nbest scoring: {gridsearch.best_score_}\n\n'
+                                        if best_acc < acc:
+                                            best_acc = acc
+                                            best_iteration = counter
+                                            best_gridsearch = gridsearch
+                                        print(f'{counter}: {acc}')
+                                        counter += 1
+                            else:
+                                cols = []
+                                if v != 'none':
+                                    cols.append(v)
+                                if a != 'none':
+                                    cols.append(a)
+                                if c != 'none:':
+                                    cols.append(c)
+                                if i != 'none':
+                                    cols.append(i)
+
+                                if len(cols) > 0:
+                                    print(f'{m_name} - {counter}: {cols}')
+                                    split = GroupShuffleSplit(n_splits=4, train_size=.8, random_state=42).split(X=x_train, y=y_train, groups=word_mark_df.loc[train_idx, 'Case ID'])
+                                    gridsearch = GridSearchCV(model['clf'], cv=split, param_grid=model['grid'])
+                                    x_train_scaled = x_train[cols]
+                                    x_test_scaled = x_test[cols]
+                                    gridsearch.fit(x_train_scaled, y_train)
+                                    y_pred = gridsearch.predict(x_test_scaled)
+                                    acc = accuracy_score(y_pred=y_pred, y_true=y_test)
+                                    precision = precision_score(y_pred=y_pred, y_true=y_test)
+                                    recall = recall_score(y_pred=y_pred, y_true=y_test)
+                                    auc = roc_auc_score(y_score=y_pred, y_true=y_test)
+                                    f1 = f1_score(y_pred=y_pred, y_true=y_test)
+                                    result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n\nbest params: {gridsearch.best_params_}\nbest scoring: {gridsearch.best_score_}\n\n'
+                                    if best_acc < acc:
+                                        best_acc = acc
+                                        best_iteration = counter
+                                        best_gridsearch = gridsearch
+                                    print(f'{counter}: {acc}')
+                                    counter += 1
 
             with open(f'tml_results_{m_name}_final.txt', 'w') as file:
                 file.write(f'best iteration: {best_iteration}\n\n\n' + result)
