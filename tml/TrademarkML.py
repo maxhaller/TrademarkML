@@ -1,5 +1,3 @@
-    import sklearn.preprocessing
-
 from tml.similarity_module.phentic_encoding import PhoneticEncoding
 from tml.similarity_module.string_similarity import StringSimilarity
 from tml.similarity_module.conceptual_similarity import ConceptualSimilarity
