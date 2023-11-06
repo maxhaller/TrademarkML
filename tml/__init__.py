@@ -1,3 +1,5 @@
+from tml.tml import TrademarkML
+
 import logging
 
 logger = logging.getLogger(__name__)

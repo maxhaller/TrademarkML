@@ -9,7 +9,7 @@ setup(
     license="MIT",
     install_requires=[
         "pandas==2.0.2",
-        "scikit-learn==1.3.1",
+        "scikit-learn==1.3.2",
         "jellyfish==1.0.1",
         "spacy==3.7.1",
         "keras==2.14.0",
