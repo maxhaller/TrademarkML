@@ -252,7 +252,7 @@ class TrademarkML:
                                         recall = recall_score(y_pred=y_pred, y_true=y_test)
                                         auc = roc_auc_score(y_score=y_pred, y_true=y_test)
                                         f1 = f1_score(y_pred=y_pred, y_true=y_test)
-                                        result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n\nbest params: {gridsearch.best_params_}\nbest scoring: {gridsearch.best_score_}\n\n'
+                                        result += f'\n{counter}: {v}, {a}, {c}, {i}, {scaler}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n\nbest params: {gridsearch.best_params_}\nbest scoring: {gridsearch.best_score_}\n\n'
                                         if best_acc < acc:
                                             best_acc = acc
                                             best_iteration = counter
