@@ -1,3 +1,5 @@
+import numpy as np
+
 from tml.similarity_module.phentic_encoding import PhoneticEncoding
 from tml.similarity_module.string_similarity import StringSimilarity
 from tml.similarity_module.conceptual_similarity import ConceptualSimilarity
@@ -19,7 +21,8 @@ import pickle
 class TrademarkML:
 
     def __init__(self):
-        self.nlp = spacy_universal_sentence_encoder.load_model('en_use_lg')
+        #self.nlp = spacy_universal_sentence_encoder.load_model('en_use_lg')
+        pass
 
     def compute_features(self, df: pd.DataFrame,
                          tm1_col: str = 'Contested Trademark',
@@ -105,7 +108,6 @@ class TrademarkML:
         splitter = GroupShuffleSplit(test_size=.20, n_splits=1, random_state=42)
         split = splitter.split(df, groups=df[id_col])
         train_idx, test_idx = next(split)
-
         df_train = df.iloc[train_idx]
         df_test = df.iloc[test_idx]
         return df_train, df_test, train_idx, test_idx
@@ -137,25 +139,27 @@ class TrademarkML:
                 sim = curr_sim
         return sim
 
-    def fit(self, x_train: pd.DataFrame, y_train: pd.DataFrame, x_test: pd.DataFrame, y_test: pd.DataFrame, word_mark_df: pd.DataFrame, train_idx: int):
+    def fit(self, x_train: pd.DataFrame, y_train: pd.DataFrame, x_test: pd.DataFrame, y_test: pd.DataFrame, word_mark_df: pd.DataFrame, train_idx: np.ndarray):
         cols = x_train.columns
+
         vis_features = [c for c in cols if not c.startswith('metaphone')
                                         and not c.startswith('conc_')
-                                        and not c.startswith('spacy')
+                                        and not c.startswith('fasttext')
                                         and not c.startswith('google')
                                         and not c.startswith('vgg')
                                         and not c.startswith('resnet')
-                                        and not c in ['Outcome', 'Case ID']
+                                        and not c in ['Outcome', 'Case ID', 'Type', 'index']
                                         and 'Contested' not in c
-                                        and 'Earlier' not in c
-                        ]
+                                        and 'Earlier' not in c]
+
+
+        #vis_features = [c for c in cols if c.startswith('vgg') or c.startswith('resnet')]
         vis_features.append('none')
         aur_features = [c for c in cols if c.startswith('metaphone')]
         aur_features.append('none')
         con_features = [c for c in cols if c.startswith('conc_')]
         con_features.append('none')
-        it_features = [c for c in cols if c.startswith('spacy')]
-        it_features.append('none')
+        it_features = [c for c in cols if c.startswith('fasttext')]
 
         print(vis_features)
         print(aur_features)
@@ -182,11 +186,12 @@ class TrademarkML:
                    'n_estimators': [15, 20, 50]}
 
         models = [
+            #{
+            #    'name': 'rf',
+            #    'clf': rf,
+            #    'grid': rf_grid
+            #}#,             
             {
-                'name': 'rf',
-                'clf': rf,
-                'grid': rf_grid
-            },             {
                 'name': 'svm',
                 'clf': svm,
                 'grid': svm_grid
@@ -221,7 +226,7 @@ class TrademarkML:
                                         cols.append(v)
                                     if a != 'none':
                                         cols.append(a)
-                                    if c != 'none:':
+                                    if c != 'none':
                                         cols.append(c)
                                     if i != 'none':
                                         cols.append(i)
@@ -291,10 +296,10 @@ class TrademarkML:
                                     print(f'{counter}: {acc}')
                                     counter += 1
 
-            with open(f'tml_results_{m_name}_final.txt', 'w') as file:
+            with open(f'tml_results_{m_name}_final_fasttext.txt', 'w') as file:
                 file.write(f'best iteration: {best_iteration}\n\n\n' + result)
 
-            with open(f'tml_best_{m_name}_final.pickle', 'wb') as pickle_file:
+            with open(f'tml_best_{m_name}_final_fasttext.pickle', 'wb') as pickle_file:
                 pickle.dump(best_gridsearch.best_estimator_, pickle_file)
 
 
