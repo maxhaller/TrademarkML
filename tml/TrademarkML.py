@@ -18,6 +18,11 @@ import pandas as pd
 import pickle
 
 
+def get_visual_similarity_method_calls(s1: str, s2:str):
+    sim = StringSimilarity(s1=s1, s2=s2)
+    return [(getattr(sim, m), m) for m in dir(sim) if callable(getattr(sim, m)) if not m.startswith('_')]
+
+
 class TrademarkML:
 
     def __init__(self):
@@ -36,15 +41,6 @@ class TrademarkML:
         for i, row in df.iterrows():
             tm1 = row[tm1_col]
             tm2 = row[tm2_col]
-            for feature in self._get_visual_similarity_method_calls(tm1, tm2):
-                # cache
-                if tm1 not in vis_cache:
-                    vis_cache[tm1] = {}
-                if tm2 not in vis_cache[tm1]:
-                    vis_cache[tm1][tm2] = {}
-                if feature[1] not in vis_cache[tm1][tm2]:
-                    vis_cache[tm1][tm2][feature[1]] = feature[0]()
-                df.loc[i, feature[1]] = vis_cache[tm1][tm2][feature[1]]
             for feature in self._get_phonetic_encoding_method_calls():
                 # cache
                 if tm1 not in aur_enc_cache:
@@ -182,7 +178,7 @@ class TrademarkML:
         svm = LinearSVC(random_state=42, dual='auto')
         svm_grid = {'C': [0.01, 0.1, 1, 10, 100]}
 
-        rf = RandomForestClassifier(random_state=42)
+        rf = RandomForestClassifier(random_state=42, n_jobs=-1)
         rf_grid = {'max_depth': [25, 50, 75],
                    'max_features': ['log2', 'sqrt'],
                    'n_estimators': [15, 20, 50]}
@@ -251,17 +247,14 @@ class TrademarkML:
                                             x_train_scaled = x_train[cols]
                                             x_test_scaled = x_test[cols]
 
-                                        start = time.time()
                                         gridsearch.fit(x_train_scaled, y_train)
-                                        mid = time.time()
                                         y_pred = gridsearch.predict(x_test_scaled)
-                                        stop = time.time()
                                         acc = accuracy_score(y_pred=y_pred, y_true=y_test)
                                         precision = precision_score(y_pred=y_pred, y_true=y_test)
                                         recall = recall_score(y_pred=y_pred, y_true=y_test)
                                         auc = roc_auc_score(y_score=y_pred, y_true=y_test)
                                         f1 = f1_score(y_pred=y_pred, y_true=y_test)
-                                        result += f'\n{counter}: {v}, {a}, {c}, {i}, {scaler}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n@fitting: {mid - start}\n@predicting: {stop-mid}\n\nbest params: {gridsearch.best_params_}\n\n'
+                                        result += f'\n{counter}: {v}, {a}, {c}, {i}, {scaler}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n@@@@@@@@@\n\nbest params: {gridsearch.best_params_}\n\n'
                                         if best_acc < acc:
                                             best_acc = acc
                                             best_iteration = counter
@@ -285,17 +278,14 @@ class TrademarkML:
                                     gridsearch = GridSearchCV(model['clf'], cv=split, param_grid=model['grid'])
                                     x_train_scaled = x_train[cols]
                                     x_test_scaled = x_test[cols]
-                                    start = time.time()
                                     gridsearch.fit(x_train_scaled, y_train)
-                                    mid = time.time()
                                     y_pred = gridsearch.predict(x_test_scaled)
-                                    stop = time.time()
                                     acc = accuracy_score(y_pred=y_pred, y_true=y_test)
                                     precision = precision_score(y_pred=y_pred, y_true=y_test)
                                     recall = recall_score(y_pred=y_pred, y_true=y_test)
                                     auc = roc_auc_score(y_score=y_pred, y_true=y_test)
                                     f1 = f1_score(y_pred=y_pred, y_true=y_test)
-                                    result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n@fitting: {mid - start}\n@predicting: {stop-mid}\n\nbest params: {gridsearch.best_params_}\n\n'
+                                    result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n@@@@@@@@@\n\nbest params: {gridsearch.best_params_}\n\n'
                                     if best_acc < acc:
                                         best_acc = acc
                                         best_iteration = counter
