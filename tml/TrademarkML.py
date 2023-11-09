@@ -1,5 +1,5 @@
 import numpy as np
-
+import time
 from tml.similarity_module.phentic_encoding import PhoneticEncoding
 from tml.similarity_module.string_similarity import StringSimilarity
 from tml.similarity_module.conceptual_similarity import ConceptualSimilarity
@@ -139,27 +139,28 @@ class TrademarkML:
                 sim = curr_sim
         return sim
 
-    def fit(self, x_train: pd.DataFrame, y_train: pd.DataFrame, x_test: pd.DataFrame, y_test: pd.DataFrame, word_mark_df: pd.DataFrame, train_idx: np.ndarray):
+    def fit(self, x_train: pd.DataFrame, y_train: pd.DataFrame, x_test: pd.DataFrame, y_test: pd.DataFrame, word_mark_df: pd.DataFrame, train_idx: np.ndarray, set: str):
         cols = x_train.columns
 
-        vis_features = [c for c in cols if not c.startswith('metaphone')
-                                        and not c.startswith('conc_')
-                                        and not c.startswith('fasttext')
-                                        and not c.startswith('google')
-                                        and not c.startswith('vgg')
-                                        and not c.startswith('resnet')
-                                        and not c in ['Outcome', 'Case ID', 'Type', 'index']
-                                        and 'Contested' not in c
-                                        and 'Earlier' not in c]
+        if set == 'word':
+            vis_features = [c for c in cols if not c.startswith('metaphone')
+                                            and not c.startswith('conc_')
+                                            and not c.startswith('fasttext')
+                                            and not c.startswith('google')
+                                            and not c.startswith('vgg')
+                                            and not c.startswith('resnet')
+                                            and not c in ['Outcome', 'Case ID', 'Type', 'index']
+                                            and 'Contested' not in c
+                                            and 'Earlier' not in c]
+        else:
+            vis_features = [c for c in cols if c.startswith('vgg') or c.startswith('resnet')]
 
-
-        #vis_features = [c for c in cols if c.startswith('vgg') or c.startswith('resnet')]
         vis_features.append('none')
         aur_features = [c for c in cols if c.startswith('metaphone')]
         aur_features.append('none')
         con_features = [c for c in cols if c.startswith('conc_')]
         con_features.append('none')
-        it_features = [c for c in cols if c.startswith('fasttext')]
+        it_features = [c for c in cols if c.startswith('fasttext') or c.startswith('google')]
 
         print(vis_features)
         print(aur_features)
@@ -170,11 +171,11 @@ class TrademarkML:
         y_train = binarizer.fit_transform(y_train).ravel()
         y_test = binarizer.transform(y_test).ravel()
 
-        mlp = MLPClassifier(random_state=42, activation='relu', solver='adam', max_iter=500)
+        mlp = MLPClassifier(random_state=42, activation='relu', solver='adam', max_iter=200)
         mlp_grid = {
-            'hidden_layer_sizes': [(45,2,11,), (3,)],
+            'hidden_layer_sizes': [(3,)],
             'alpha': [0.0001, 0.05],
-            'learning_rate': ['constant','adaptive'],
+            'learning_rate': ['constant'],
         }
 
         svm = LinearSVC(random_state=42, dual='auto')
@@ -191,14 +192,14 @@ class TrademarkML:
             #    'clf': rf,
             #    'grid': rf_grid
             #}#,             
-            {
-                'name': 'svm',
-                'clf': svm,
-                'grid': svm_grid
-            }#,             {
-             #   'name': 'mlp',
-             #   'clf': mlp,
-             #   'grid': mlp_grid
+            #{
+            #    'name': 'svm',
+            #    'clf': svm,
+            #    'grid': svm_grid
+            #},             {
+            #{   'name': 'mlp',
+            #    'clf': mlp,
+            #    'grid': mlp_grid
             #}
         ]
 
@@ -219,7 +220,7 @@ class TrademarkML:
                 for a in aur_features:
                     for c in con_features:
                         for i in it_features:
-                            if m_name == 'svm':
+                            if m_name == 'svm' or m_name == 'mlp':
                                 for scaler in scalers:
                                     cols = []
                                     if v != 'none':
@@ -233,7 +234,7 @@ class TrademarkML:
 
                                     if len(cols) > 0:
                                         print(f'{m_name} - {counter}: {scaler}, {cols}')
-                                        split = GroupShuffleSplit(n_splits=4, train_size=.8, random_state=42).split(X=x_train, y=y_train, groups=word_mark_df.loc[train_idx, 'Case ID'])
+                                        split = GroupShuffleSplit(n_splits=5, train_size=.8, random_state=42).split(X=x_train, y=y_train, groups=word_mark_df.loc[train_idx, 'Case ID'])
                                         gridsearch = GridSearchCV(model['clf'], cv=split, param_grid=model['grid'])
 
                                         sc = None
@@ -249,15 +250,17 @@ class TrademarkML:
                                             x_train_scaled = x_train[cols]
                                             x_test_scaled = x_test[cols]
 
-
+                                        start = time.time()
                                         gridsearch.fit(x_train_scaled, y_train)
+                                        mid = time.time()
                                         y_pred = gridsearch.predict(x_test_scaled)
+                                        stop = time.time()
                                         acc = accuracy_score(y_pred=y_pred, y_true=y_test)
                                         precision = precision_score(y_pred=y_pred, y_true=y_test)
                                         recall = recall_score(y_pred=y_pred, y_true=y_test)
                                         auc = roc_auc_score(y_score=y_pred, y_true=y_test)
                                         f1 = f1_score(y_pred=y_pred, y_true=y_test)
-                                        result += f'\n{counter}: {v}, {a}, {c}, {i}, {scaler}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n\nbest params: {gridsearch.best_params_}\nbest scoring: {gridsearch.best_score_}\n\n'
+                                        result += f'\n{counter}: {v}, {a}, {c}, {i}, {scaler}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n@fitting: {mid - start}\n@predicting: {stop-mid}\n\nbest params: {gridsearch.best_params_}\n\n'
                                         if best_acc < acc:
                                             best_acc = acc
                                             best_iteration = counter
@@ -277,18 +280,21 @@ class TrademarkML:
 
                                 if len(cols) > 0:
                                     print(f'{m_name} - {counter}: {cols}')
-                                    split = GroupShuffleSplit(n_splits=4, train_size=.8, random_state=42).split(X=x_train, y=y_train, groups=word_mark_df.loc[train_idx, 'Case ID'])
+                                    split = GroupShuffleSplit(n_splits=5, train_size=.8, random_state=42).split(X=x_train, y=y_train, groups=word_mark_df.loc[train_idx, 'Case ID'])
                                     gridsearch = GridSearchCV(model['clf'], cv=split, param_grid=model['grid'])
                                     x_train_scaled = x_train[cols]
                                     x_test_scaled = x_test[cols]
+                                    start = time.time()
                                     gridsearch.fit(x_train_scaled, y_train)
+                                    mid = time.time()
                                     y_pred = gridsearch.predict(x_test_scaled)
+                                    stop = time.time()
                                     acc = accuracy_score(y_pred=y_pred, y_true=y_test)
                                     precision = precision_score(y_pred=y_pred, y_true=y_test)
                                     recall = recall_score(y_pred=y_pred, y_true=y_test)
                                     auc = roc_auc_score(y_score=y_pred, y_true=y_test)
                                     f1 = f1_score(y_pred=y_pred, y_true=y_test)
-                                    result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n\nbest params: {gridsearch.best_params_}\nbest scoring: {gridsearch.best_score_}\n\n'
+                                    result += f'\n{counter}: {v}, {a}, {c}, {i}\n\naccuracy: {acc}\nprecision: {precision}\nrecall: {recall}\nroc: {auc}\nf1: {f1}\n@fitting: {mid - start}\n@predicting: {stop-mid}\n\nbest params: {gridsearch.best_params_}\n\n'
                                     if best_acc < acc:
                                         best_acc = acc
                                         best_iteration = counter
@@ -296,10 +302,10 @@ class TrademarkML:
                                     print(f'{counter}: {acc}')
                                     counter += 1
 
-            with open(f'tml_results_{m_name}_final_fasttext.txt', 'w') as file:
+            with open(f'tml_results_{m_name}_{set}_final_5-fold.txt', 'w') as file:
                 file.write(f'best iteration: {best_iteration}\n\n\n' + result)
 
-            with open(f'tml_best_{m_name}_final_fasttext.pickle', 'wb') as pickle_file:
+            with open(f'tml_best_{m_name}_{set}_final_5-fold.pickle', 'wb') as pickle_file:
                 pickle.dump(best_gridsearch.best_estimator_, pickle_file)
 
 

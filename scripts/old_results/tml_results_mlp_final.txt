@@ -1,0 +1,36 @@
+best iteration: 1
+
+
+
+1: damerau, metaphone2_damerau, conc_lev_wordnet, spacy_item_similarity
+
+accuracy: 0.6578947368421053
+precision: 0.677158273381295
+recall: 0.944792973651192
+roc: 0.5012678779017115
+f1: 0.78889470927187
+
+best params: {'alpha': 0.0001, 'hidden_layer_sizes': (45, 2, 11), 'learning_rate': 'constant'}
+best scoring: 0.5536194568558761
+cv-results: {'mean_fit_time': array([2.43832254, 2.44112813, 1.1203624 , 1.14615828, 3.05053139,
+       3.03388447, 1.12642068, 1.13057244]), 'std_fit_time': array([0.17853017, 0.17612453, 0.24993444, 0.24600484, 1.08982149,
+       1.0839152 , 0.25342945, 0.25582732]), 'mean_score_time': array([0.002065  , 0.00263119, 0.00150549, 0.00216752, 0.00279927,
+       0.0028522 , 0.00149554, 0.00126261]), 'std_score_time': array([0.00015872, 0.00029496, 0.0005116 , 0.00025145, 0.00033305,
+       0.00030859, 0.00064626, 0.00045177]), 'param_alpha': masked_array(data=[0.0001, 0.0001, 0.0001, 0.0001, 0.05, 0.05, 0.05, 0.05],
+             mask=[False, False, False, False, False, False, False, False],
+       fill_value='?',
+            dtype=object), 'param_hidden_layer_sizes': masked_array(data=[(45, 2, 11), (45, 2, 11), (3,), (3,), (45, 2, 11),
+                   (45, 2, 11), (3,), (3,)],
+             mask=[False, False, False, False, False, False, False, False],
+       fill_value='?',
+            dtype=object), 'param_learning_rate': masked_array(data=['constant', 'adaptive', 'constant', 'adaptive',
+                   'constant', 'adaptive', 'constant', 'adaptive'],
+             mask=[False, False, False, False, False, False, False, False],
+       fill_value='?',
+            dtype=object), 'params': [{'alpha': 0.0001, 'hidden_layer_sizes': (45, 2, 11), 'learning_rate': 'constant'}, {'alpha': 0.0001, 'hidden_layer_sizes': (45, 2, 11), 'learning_rate': 'adaptive'}, {'alpha': 0.0001, 'hidden_layer_sizes': (3,), 'learning_rate': 'constant'}, {'alpha': 0.0001, 'hidden_layer_sizes': (3,), 'learning_rate': 'adaptive'}, {'alpha': 0.05, 'hidden_layer_sizes': (45, 2, 11), 'learning_rate': 'constant'}, {'alpha': 0.05, 'hidden_layer_sizes': (45, 2, 11), 'learning_rate': 'adaptive'}, {'alpha': 0.05, 'hidden_layer_sizes': (3,), 'learning_rate': 'constant'}, {'alpha': 0.05, 'hidden_layer_sizes': (3,), 'learning_rate': 'adaptive'}], 'split0_test_score': array([0.61693936, 0.61693936, 0.62848893, 0.62848893, 0.57362849,
+       0.57362849, 0.63137632, 0.63137632]), 'split1_test_score': array([0.65978456, 0.65978456, 0.66157989, 0.66157989, 0.5951526 ,
+       0.5951526 , 0.66337522, 0.66337522]), 'split2_test_score': array([0.48431261, 0.48431261, 0.37877924, 0.37877924, 0.48602396,
+       0.48602396, 0.37877924, 0.37877924]), 'split3_test_score': array([0.4534413 , 0.4534413 , 0.42982456, 0.42982456, 0.44736842,
+       0.44736842, 0.42982456, 0.42982456]), 'mean_test_score': array([0.55361946, 0.55361946, 0.52466816, 0.52466816, 0.52554337,
+       0.52554337, 0.52583884, 0.52583884]), 'std_test_score': array([0.08677491, 0.08677491, 0.12227271, 0.12227271, 0.06089074,
+       0.06089074, 0.12338931, 0.12338931]), 'rank_test_score': array([1, 1, 7, 7, 5, 5, 3, 3])}
