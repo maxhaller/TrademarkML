@@ -22,11 +22,11 @@ x_train, y_train = trademarkml.get_x_y_from_df(df=train_word_df, y_col='Outcome'
 x_test, y_test = trademarkml.get_x_y_from_df(df=test_word_df, y_col='Outcome')
 trademarkml.fit(x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, train_idx=train_idx, word_mark_df=word_df, set='figurative')
 
-word_df = pd.read_csv('./features_full.csv', sep=',', encoding='utf-8')
-word_df = word_df[full_df['Type'] == 'word'].reset_index()
+#word_df = pd.read_csv('./features_full.csv', sep=',', encoding='utf-8')
+#word_df = word_df[full_df['Type'] == 'word'].reset_index()
 
-train_word_df, test_word_df, train_idx, test_idx = trademarkml.train_test_split(df=word_df, id_col='Case ID')
+#train_word_df, test_word_df, train_idx, test_idx = trademarkml.train_test_split(df=word_df, id_col='Case ID')
 
-x_train, y_train = trademarkml.get_x_y_from_df(df=train_word_df, y_col='Outcome')
-x_test, y_test = trademarkml.get_x_y_from_df(df=test_word_df, y_col='Outcome')
-trademarkml.fit(x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, train_idx=train_idx, word_mark_df=word_df, set='word')
+#x_train, y_train = trademarkml.get_x_y_from_df(df=train_word_df, y_col='Outcome')
+#x_test, y_test = trademarkml.get_x_y_from_df(df=test_word_df, y_col='Outcome')
+#trademarkml.fit(x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, train_idx=train_idx, word_mark_df=word_df, set='word')

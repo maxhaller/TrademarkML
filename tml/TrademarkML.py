@@ -161,6 +161,7 @@ class TrademarkML:
         con_features = [c for c in cols if c.startswith('conc_')]
         con_features.append('none')
         it_features = [c for c in cols if c.startswith('fasttext') or c.startswith('google')]
+        it_features.append('none')
 
         print(vis_features)
         print(aur_features)
@@ -187,16 +188,16 @@ class TrademarkML:
                    'n_estimators': [15, 20, 50]}
 
         models = [
-            #{
-            #    'name': 'rf',
-            #    'clf': rf,
-            #    'grid': rf_grid
-            #}#,             
-            #{
-            #    'name': 'svm',
-            #    'clf': svm,
-            #    'grid': svm_grid
-            #},             {
+            {
+                'name': 'rf',
+                'clf': rf,
+                'grid': rf_grid
+            },             
+            {
+                'name': 'svm',
+                'clf': svm,
+                'grid': svm_grid
+            }#,             {
             #{   'name': 'mlp',
             #    'clf': mlp,
             #    'grid': mlp_grid
