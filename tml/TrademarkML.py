@@ -1,5 +1,8 @@
 import numpy as np
 import time
+
+from sklearn.pipeline import Pipeline
+
 from tml.similarity_module.phentic_encoding import PhoneticEncoding
 from tml.similarity_module.string_similarity import StringSimilarity
 from tml.similarity_module.conceptual_similarity import ConceptualSimilarity
@@ -11,7 +14,8 @@ from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import GroupShuffleSplit
-from sklearn.preprocessing import Normalizer, StandardScaler
+from sklearn.preprocessing import Normalizer, StandardScaler, RobustScaler
+from sklearn.decomposition import PCA
 
 import spacy_universal_sentence_encoder
 import pandas as pd
@@ -63,6 +67,7 @@ class TrademarkML:
                     if vis_feature[1] not in vis_cache[tm1_enc][tm2_enc]:
                         vis_cache[tm1_enc][tm2_enc][vis_feature[1]] = vis_feature[0]()
                     df.loc[i, f'{feature[1]}_{vis_feature[1]}'] = vis_cache[tm1_enc][tm2_enc][vis_feature[1]]
+            '''
             for method in ['lev', 'cos', 'lcs']:
                 # cache
                 if tm1 not in conc_cache:
@@ -73,12 +78,14 @@ class TrademarkML:
                     conc_cache[tm1][tm2][method] = conceptual_sim.get_conceptual_similarity(tm1, tm2, method)
 
                 df.loc[i, f'conc_{method}_wordnet'] = conc_cache[tm1][tm2][method]
+            
             earlier_items = row[earlier_items_col]
             contested_item = row[contested_item_col]
             print(contested_item)
             df.loc[i, 'spacy_item_similarity'] = self._get_item_similarity(nlp=self.nlp,
                                                                            contested_item=contested_item,
                                                                            earlier_items=earlier_items)
+           '''
         return df
 
 
@@ -110,7 +117,7 @@ class TrademarkML:
 
     @staticmethod
     def get_x_y_from_df(df: pd.DataFrame, y_col: str):
-        feature_cols = [c for c in df.columns if c not in ['outcome', 'ID', 'Type']]
+        feature_cols = [c for c in df.columns if c not in ['outcome', 'ID', 'Type', 'index']]
         return df[feature_cols], df[y_col]
 
     @staticmethod
@@ -138,6 +145,12 @@ class TrademarkML:
     def fit(self, x_train: pd.DataFrame, y_train: pd.DataFrame, x_test: pd.DataFrame, y_test: pd.DataFrame, word_mark_df: pd.DataFrame, train_idx: np.ndarray, set: str):
         cols = x_train.columns
 
+        train_set_indices = x_train.index
+        test_set_indices = x_test.index
+
+        x_train = x_train.reset_index()
+        x_test = x_test.reset_index()
+
         if set == 'word':
             vis_features = [c for c in cols if not c.startswith('metaphone')
                                             and not c.startswith('conc_')
@@ -151,18 +164,42 @@ class TrademarkML:
         else:
             vis_features = [c for c in cols if c.startswith('vgg') or c.startswith('resnet')]
 
-        vis_features.append('none')
         aur_features = [c for c in cols if c.startswith('metaphone')]
-        aur_features.append('none')
         con_features = [c for c in cols if c.startswith('conc_')]
-        con_features.append('none')
         it_features = [c for c in cols if c.startswith('fasttext') or c.startswith('google')]
+
+        pipeline = Pipeline([('scaling', RobustScaler()), ('pca', PCA(n_components=1, random_state=42))])
+
+        x_train.loc[:, 'vis_pca'] = pd.Series(pipeline.fit_transform(X=x_train[vis_features])[:, 0])
+        x_test.loc[:, 'vis_pca'] = pd.Series(pipeline.transform(X=x_test[vis_features])[:, 0])
+        vis_features.append('vis_pca')
+
+        m2_features = [c for c in cols if c.startswith('metaphone2')]
+        x_train.loc[:, 'm2_pca'] = pd.Series(pipeline.fit_transform(X=x_train[m2_features])[:, 0])
+        x_test.loc[:, 'm2_pca'] = pd.Series(pipeline.transform(X=x_test[m2_features])[:, 0])
+        aur_features.append('m2_pca')
+
+        m3_features = [c for c in cols if c.startswith('metaphone3')]
+        x_train.loc[:, 'm3_pca'] = pd.Series(pipeline.fit_transform(X=x_train[m3_features])[:, 0])
+        x_test.loc[:, 'm3_pca'] = pd.Series(pipeline.transform(X=x_test[m3_features])[:, 0])
+        aur_features.append('m3_pca')
+
+        vis_features.append('none')
+        aur_features.append('none')
+        con_features.append('none')
         it_features.append('none')
+
+        x_train.set_index(train_set_indices)
+        x_test.set_index(test_set_indices)
+
+        print(x_test)
 
         print(vis_features)
         print(aur_features)
         print(con_features)
         print(it_features)
+
+
 
         binarizer = LabelBinarizer()
         y_train = binarizer.fit_transform(y_train).ravel()

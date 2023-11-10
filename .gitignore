@@ -1,5 +1,12 @@
 .idea
 
+activations_002173717_contested_resnet50/
+activations_002173717_contested_vgg16/
+activations_002173717_contested_vgg19/
+activations_002173717_earlier_vgg16/
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

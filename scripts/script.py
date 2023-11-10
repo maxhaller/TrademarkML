@@ -13,7 +13,7 @@ trademarkml = TrademarkML()
 full_df = pd.read_csv('../TMSIM-500/data.csv', sep=',', encoding='utf-8')
 #word_df, figurative_df = trademarkml.get_word_and_fig_mark_set(full_df)
 #word_df = trademarkml.compute_features(df=word_df)
-word_df = pd.read_csv('./features_full.csv', sep=',', encoding='utf-8')
+word_df = pd.read_csv('./full_features_fixed.csv', sep=',', encoding='utf-8')
 word_df = word_df[full_df['Type'] == 'figurative'].reset_index()
 
 train_word_df, test_word_df, train_idx, test_idx = trademarkml.train_test_split(df=word_df, id_col='Case ID')
