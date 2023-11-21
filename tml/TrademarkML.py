@@ -3,13 +3,13 @@ import time
 
 from sklearn.pipeline import Pipeline
 
+from tml.similarity_module.item_similarity import ItemSimilarity
 from tml.similarity_module.phentic_encoding import PhoneticEncoding
 from tml.similarity_module.string_similarity import StringSimilarity
 from tml.similarity_module.conceptual_similarity import ConceptualSimilarity
 from tml.statistics_module.dataset_exploration import export_statistics
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
 from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.preprocessing import LabelBinarizer
@@ -17,7 +17,6 @@ from sklearn.model_selection import GroupShuffleSplit
 from sklearn.preprocessing import Normalizer, StandardScaler, RobustScaler
 from sklearn.decomposition import PCA
 
-import spacy_universal_sentence_encoder
 import pandas as pd
 import pickle
 
@@ -30,8 +29,8 @@ def get_visual_similarity_method_calls(s1: str, s2:str):
 class TrademarkML:
 
     def __init__(self):
-        #self.nlp = spacy_universal_sentence_encoder.load_model('en_use_lg')
         pass
+
 
     def compute_features(self, df: pd.DataFrame,
                          tm1_col: str = 'Contested Trademark',
@@ -45,8 +44,16 @@ class TrademarkML:
         for i, row in df.iterrows():
             tm1 = row[tm1_col]
             tm2 = row[tm2_col]
+            for feature in self._get_visual_similarity_method_calls(s1=tm1, s2=tm2):
+                if tm1 not in vis_cache:
+                    vis_cache[tm1] = {}
+                if tm2 not in vis_cache[tm1]:
+                    vis_cache[tm1][tm2] = {}
+                if feature[1] not in vis_cache[tm1][tm2]:
+                    vis_cache[tm1][tm2][feature[1]] = feature[0]()
+                df.loc[i, f'visual_{feature[1]}'] = vis_cache[tm1][tm2][feature[1]]
+
             for feature in self._get_phonetic_encoding_method_calls():
-                # cache
                 if tm1 not in aur_enc_cache:
                     aur_enc_cache[tm1] = {}
                 if feature[1] not in aur_enc_cache[tm1]:
@@ -59,15 +66,14 @@ class TrademarkML:
                 tm1_enc = aur_enc_cache[tm1][feature[1]]
                 tm2_enc = aur_enc_cache[tm2][feature[1]]
                 for vis_feature in self._get_visual_similarity_method_calls(tm1_enc, tm2_enc):
-                    # cache
                     if tm1_enc not in vis_cache:
                         vis_cache[tm1_enc] = {}
                     if tm2_enc not in vis_cache[tm1_enc]:
                         vis_cache[tm1_enc][tm2_enc] = {}
                     if vis_feature[1] not in vis_cache[tm1_enc][tm2_enc]:
                         vis_cache[tm1_enc][tm2_enc][vis_feature[1]] = vis_feature[0]()
-                    df.loc[i, f'{feature[1]}_{vis_feature[1]}'] = vis_cache[tm1_enc][tm2_enc][vis_feature[1]]
-            '''
+                    df.loc[i, f'aural_{feature[1]}_{vis_feature[1]}'] = vis_cache[tm1_enc][tm2_enc][vis_feature[1]]
+
             for method in ['lev', 'cos', 'lcs']:
                 # cache
                 if tm1 not in conc_cache:
@@ -77,15 +83,14 @@ class TrademarkML:
                 if method not in conc_cache[tm1][tm2]:
                     conc_cache[tm1][tm2][method] = conceptual_sim.get_conceptual_similarity(tm1, tm2, method)
 
-                df.loc[i, f'conc_{method}_wordnet'] = conc_cache[tm1][tm2][method]
+                df.loc[i, f'conceptual_{method}_wordnet'] = conc_cache[tm1][tm2][method]
             
             earlier_items = row[earlier_items_col]
             contested_item = row[contested_item_col]
-            print(contested_item)
-            df.loc[i, 'spacy_item_similarity'] = self._get_item_similarity(nlp=self.nlp,
-                                                                           contested_item=contested_item,
-                                                                           earlier_items=earlier_items)
-           '''
+
+            for feature in self._get_item_similarity_method_calls():
+                df.loc[i, f'item_{feature[1]}'] = feature[0](earlier_items, contested_item)
+
         return df
 
 
@@ -131,16 +136,9 @@ class TrademarkML:
         return [(getattr(pe, m), m) for m in dir(pe) if callable(getattr(pe, m)) if not m.startswith('_')]
 
     @staticmethod
-    def _get_item_similarity(nlp, contested_item: str, earlier_items: str):
-        earlier_list = earlier_items.split(';')
-        sim = 0
-        c_emb = nlp(contested_item)
-        for earlier in earlier_list:
-            e_emb = nlp(earlier)
-            curr_sim = c_emb.similarity(e_emb)
-            if sim < curr_sim:
-                sim = curr_sim
-        return sim
+    def _get_item_similarity_method_calls():
+        itsim = ItemSimilarity()
+        return [(getattr(itsim, m), m) for m in dir(itsim) if callable(getattr(itsim, m)) if not m.startswith('_')]
 
     def fit(self, x_train: pd.DataFrame, y_train: pd.DataFrame, x_test: pd.DataFrame, y_test: pd.DataFrame, word_mark_df: pd.DataFrame, train_idx: np.ndarray, set: str):
         cols = x_train.columns
@@ -152,21 +150,13 @@ class TrademarkML:
         x_test = x_test.reset_index()
 
         if set == 'word':
-            vis_features = [c for c in cols if not c.startswith('metaphone')
-                                            and not c.startswith('conc_')
-                                            and not c.startswith('fasttext')
-                                            and not c.startswith('google')
-                                            and not c.startswith('vgg')
-                                            and not c.startswith('resnet')
-                                            and not c in ['Outcome', 'Case ID', 'Type', 'index']
-                                            and 'Contested' not in c
-                                            and 'Earlier' not in c]
+            vis_features = [c for c in cols if c.startswith('visual') and 'vgg' not in c and 'resnet' not in c]
         else:
             vis_features = [c for c in cols if c.startswith('vgg') or c.startswith('resnet')]
 
-        aur_features = [c for c in cols if c.startswith('metaphone')]
-        con_features = [c for c in cols if c.startswith('conc_')]
-        it_features = [c for c in cols if c.startswith('fasttext') or c.startswith('google')]
+        aur_features = [c for c in cols if c.startswith('aural')]
+        con_features = [c for c in cols if c.startswith('conceptual')]
+        it_features = [c for c in cols if c.startswith('item')]
 
         pipeline = Pipeline([('scaling', RobustScaler()), ('pca', PCA(n_components=1, random_state=42))])
 
@@ -174,12 +164,12 @@ class TrademarkML:
         x_test.loc[:, 'vis_pca'] = pd.Series(pipeline.transform(X=x_test[vis_features])[:, 0])
         vis_features.append('vis_pca')
 
-        m2_features = [c for c in cols if c.startswith('metaphone2')]
+        m2_features = [c for c in cols if 'metaphone2' in c]
         x_train.loc[:, 'm2_pca'] = pd.Series(pipeline.fit_transform(X=x_train[m2_features])[:, 0])
         x_test.loc[:, 'm2_pca'] = pd.Series(pipeline.transform(X=x_test[m2_features])[:, 0])
         aur_features.append('m2_pca')
 
-        m3_features = [c for c in cols if c.startswith('metaphone3')]
+        m3_features = [c for c in cols if 'metaphone3' in c]
         x_train.loc[:, 'm3_pca'] = pd.Series(pipeline.fit_transform(X=x_train[m3_features])[:, 0])
         x_test.loc[:, 'm3_pca'] = pd.Series(pipeline.transform(X=x_test[m3_features])[:, 0])
         aur_features.append('m3_pca')
@@ -199,18 +189,9 @@ class TrademarkML:
         print(con_features)
         print(it_features)
 
-
-
         binarizer = LabelBinarizer()
         y_train = binarizer.fit_transform(y_train).ravel()
         y_test = binarizer.transform(y_test).ravel()
-
-        mlp = MLPClassifier(random_state=42, activation='relu', solver='adam', max_iter=200)
-        mlp_grid = {
-            'hidden_layer_sizes': [(3,)],
-            'alpha': [0.0001, 0.05],
-            'learning_rate': ['constant'],
-        }
 
         svm = LinearSVC(random_state=42, dual='auto')
         svm_grid = {'C': [0.01, 0.1, 1, 10, 100]}
@@ -230,11 +211,7 @@ class TrademarkML:
                 'name': 'svm',
                 'clf': svm,
                 'grid': svm_grid
-            }#,             {
-            #{   'name': 'mlp',
-            #    'clf': mlp,
-            #    'grid': mlp_grid
-            #}
+            }
         ]
 
         scalers = [

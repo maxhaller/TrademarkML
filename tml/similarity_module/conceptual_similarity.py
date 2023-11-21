@@ -5,6 +5,7 @@ from strsimpy import Cosine
 from strsimpy import LongestCommonSubsequence
 from nltk.corpus import wordnet
 
+
 class ConceptualSimilarity():
 
     def __init__(self):
@@ -40,8 +41,9 @@ class ConceptualSimilarity():
         return min_distance_word
 
 
+    '''
     @staticmethod
-    def openai_direct_comparison(s1: str, s2: str):
+    def _openai_comparison(s1: str, s2: str):
         openai.api_key = "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"
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -52,3 +54,4 @@ class ConceptualSimilarity():
             temperature=0
         )
         return float(completion.choices[0].message.content)
+    '''

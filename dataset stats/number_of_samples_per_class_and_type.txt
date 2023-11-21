@@ -1,1 +1,0 @@
-{"comparison-level": {"word": {"total": 6515, "upheld": 4090, "rejected": 2425}, "figurative": {"total": 5300, "upheld": 2593, "rejected": 2707}}, "tm-level": {"word": {"total": 250, "upheld": 135, "rejected": 40, "partially upheld": 75}, "figurative": {"total": 250, "upheld": 98, "rejected": 76, "partially upheld": 76}}}

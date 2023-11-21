@@ -7,8 +7,10 @@ class PhoneticEncoding:
     def __init__(self):
         pass
 
-    def metaphone3(self, s):
+    @staticmethod
+    def metaphone3(s):
         return requests.post('http://localhost:8080/api/v1/metaphone', json={'input': s}).content.decode('utf-8')
 
-    def metaphone2(self, s):
+    @staticmethod
+    def metaphone2(s):
         return doublemetaphone(input=s)[0]

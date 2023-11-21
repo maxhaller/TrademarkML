@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import seaborn as sns
 import cv2
+import matplotlib.pylab as pylab
 
 from glob import glob
 
@@ -235,6 +236,13 @@ def get_image_aspect_ratios(img_path: str, target_path: str):
 
 def export_statistics(df: pd.DataFrame, img_path: str, target_path: str):
     rcParams.update({'figure.autolayout': True})
+    params = {'legend.fontsize': 'large',
+              'axes.labelsize': 'large',
+              'axes.titlesize':'large',
+              'xtick.labelsize':'large',
+              'ytick.labelsize':'large',
+              'font.size': 18}
+    pylab.rcParams.update(params)
     store_statistics([
         get_number_of_samples_per_class_and_type,
         get_class_distribution,
